@@ -1,0 +1,20 @@
+1ère étape :
+
+- Nettoyer main / dependances (Kévin) X
+- Ecriture de dockerfile front (Kévin)
+- Ecriture de dockerfile back (Isaac)
+- Ecriture docker compose  + test (Issa)
+- Conteneur admin (Issa)
+- Création de la db (Lounes)
+- Gerer Kurbenets (Yanis)
+
+2ème étapes :
+- Deployer API (Yanis)
+- Connecter Prisma à la db + revoir modèle (Kévin)
+- CRUD (Lounes)
+- JWT (Yanis)
+
+3ème étape
+- Documentation API avec Swagger / Postman (Issa)
+- Maquette sur Figma (Lounes)
+

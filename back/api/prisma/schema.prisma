@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// ENUMS
+// =====================
+enum TYPE_UTILISATEUR {
+  LOCATAIRE
+  BAILLEUR
+  ADMIN
+}
+
+enum TYPE_GENRE {
+  HOMME
+  FEMME
+  AUTRE
+}
+
+enum TYPE_ETABLISSEMENT {
+  RESIDENCE
+  IMMEUBLE
+  DOMAINE
+  CAMPING
+  VILLAGE_VACANCES
+  RESORT
+}
+
+enum TYPE_LOGEMENT {
+  APPARTEMENT
+  STUDIO
+  CHAMBRE
+  LOFT
+  DUPLEX
+  MAISON
+  VILLA
+  BUNGALOW
+  CHALET
+  GITE
+  TINY_HOUSE
+  CABANE
+  CABANE_ARBRES
+  ROULOTTE
+  CONTAINER
+  DOME
+  IGLOO
+  MOULIN
+  CHATEAU
+  RIAD
+  YOURTE
+  TIPI
+  TENTE
+  LODGE
+  PENICHE
+  BATEAU
+  HOTEL
+  APPART_HOTEL
+  CHAMBRE_HOTES
+  AUBERGE
+}
+
+enum ETAT_RESERVATION {
+  DEMANDE
+  ACCEPTE
+  ANNULE
+  TERMINE
+}
+
+enum STATUT_PAIEMENT {
+  EN_ATTENTE
+  PAYE
+  REMBOURSE
+  ECHEC
+}
+
+enum MODE_PAIEMENT {
+  CARTE
+  PAYPAL
+  VIREMENT
+  STRIPE
+  APPLE_PAY
+  GOOGLE_PAY
+}
+
+enum TYPE_SERVICE {
+  GENERAL
+  CUISINE
+  SECURITE
+  DIVERTISSEMENT
+  EXTERIEUR
+  BUREAU
+  LAVERIE
+  BEBE
+  ACCESSIBILITE
+}
+
+// =====================
+// TABLES
+// =====================
+
+model Utilisateur {
+  id               Int       @id @default(autoincrement())
+  nom              String    @db.VarChar(50)
+  mail             String    @unique @db.VarChar(255)
+  tel              String?   @unique @db.VarChar(20)
+  mot_de_passe     String    @db.VarChar(255)
+  date_de_naissance DateTime?
+  genre            TYPE_GENRE?
+  type             TYPE_UTILISATEUR
+  is_active        Boolean   @default(true)
+
+  // Photo de profil (FK côté Utilisateur UNIQUEMENT)
+  photo_profil_id  Int?      @unique
+  photo_profil     Photo?    @relation("PhotoProfil", fields: [photo_profil_id], references: [id])
+
+  reservations     Reservation[]
+  avis             Avis[]
+}
+
+model Etablissement {
+  id          Int       @id @default(autoincrement())
+  nom         String    @db.VarChar(255)
+  type        TYPE_ETABLISSEMENT
+  adresse     String    @db.VarChar(100)
+  ville       String    @db.VarChar(100)
+  code_postal String    @db.VarChar(20)
+  pays        String    @db.VarChar(100)
+  latitude    Float?
+  longitude   Float?
+  description String?
+
+  annonces    Annonce[]
+}
+
+model Annonce {
+  id                Int       @id @default(autoincrement())
+  titre             String    @db.VarChar(255)
+  description       String?
+  prix_par_nuit     Float
+  capacite          Int
+  superficie        Int?
+  type              TYPE_LOGEMENT
+  date_creation     DateTime  @default(now())
+  libre             Boolean   @default(true)
+
+  etablissement_id  Int
+  etablissement     Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  photos             Photo[]
+  disponibilites     Disponibilite[]
+  reservations       Reservation[]
+  annonceServices    AnnonceService[]
+  avis               Avis[]
+}
+
+model Photo {
+  id          Int       @id @default(autoincrement())
+  url         String    @db.VarChar(255)
+
+  profil_de  Utilisateur? @relation("PhotoProfil")
+
+  // Photo liée à une annonce (optionnel)
+  annonce_id  Int?
+  annonce     Annonce? @relation(fields: [annonce_id], references: [id])
+
+  created_at  DateTime @default(now())
+}
+
+model Disponibilite {
+  id          Int       @id @default(autoincrement())
+  date_debut  DateTime
+  date_fin    DateTime
+
+  annonce_id  Int
+  annonce     Annonce   @relation(fields: [annonce_id], references: [id])
+}
+
+model Reservation {
+  id              Int       @id @default(autoincrement())
+  etat            ETAT_RESERVATION @default(DEMANDE)
+
+  annonce_id      Int
+  annonce         Annonce   @relation(fields: [annonce_id], references: [id])
+
+  utilisateur_id  Int
+  utilisateur     Utilisateur @relation(fields: [utilisateur_id], references: [id])
+
+  paiements       Paiement[]
+}
+
+model Avis {
+  id              Int       @id @default(autoincrement())
+  note            Int
+  commentaire     String?
+  date_creation   DateTime @default(now())
+
+  annonce_id      Int
+  annonce         Annonce   @relation(fields: [annonce_id], references: [id])
+
+  utilisateur_id  Int
+  utilisateur     Utilisateur @relation(fields: [utilisateur_id], references: [id])
+}
+
+model Paiement {
+  id              Int       @id @default(autoincrement())
+  montant         Float
+  statut          STATUT_PAIEMENT @default(EN_ATTENTE)
+  methode         MODE_PAIEMENT
+  date_paiement   DateTime @default(now())
+
+  reservation_id  Int
+  reservation     Reservation @relation(fields: [reservation_id], references: [id])
+}
+
+model Service {
+  id              Int       @id @default(autoincrement())
+  nom             String    @db.VarChar(255)
+  description     String?
+  category        TYPE_SERVICE
+  actif           Boolean   @default(true)
+
+  annonceServices AnnonceService[]
+}
+
+model AnnonceService {
+  id          Int       @id @default(autoincrement())
+
+  annonce_id  Int
+  annonce     Annonce   @relation(fields: [annonce_id], references: [id])
+
+  service_id  Int
+  service     Service   @relation(fields: [service_id], references: [id])
+
+  @@unique([annonce_id, service_id])
+}
